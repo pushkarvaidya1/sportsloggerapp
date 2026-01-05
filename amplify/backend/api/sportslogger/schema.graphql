@@ -1,0 +1,9 @@
+type PracticeLog @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  date: String!
+  category: String!
+  subCategory: String
+  duration: Int
+  location: String
+  notes: String
+}

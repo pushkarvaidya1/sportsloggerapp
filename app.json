@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "SportsLogger",
+    "slug": "sportslogger",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.vaidya.sportslogger"
+    }
+  }
+}

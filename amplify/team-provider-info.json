@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-sportslogger-dev-81557-authRole",
+      "UnauthRoleArn": "arn:aws:iam::958850199069:role/amplify-sportslogger-dev-81557-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::958850199069:role/amplify-sportslogger-dev-81557-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-sportslogger-dev-81557-deployment",
+      "UnauthRoleName": "amplify-sportslogger-dev-81557-unauthRole",
+      "StackName": "amplify-sportslogger-dev-81557",
+      "StackId": "arn:aws:cloudformation:us-east-1:958850199069:stack/amplify-sportslogger-dev-81557/ab607a10-e91f-11f0-9175-0affd71273ff",
+      "AmplifyAppId": "d2bn5b1eiprxfe"
+    },
+    "categories": {
+      "api": {
+        "sportslogger": {}
+      }
+    }
+  }
+}
