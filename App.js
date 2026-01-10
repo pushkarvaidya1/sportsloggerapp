@@ -23,6 +23,7 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
+    // TODO: Integrate AWS Amplify Auth.signIn here
     if (username && password) {
       navigation.replace('Home');
     } else {
@@ -51,6 +52,7 @@ const SignUpScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
 
   const handleSignUp = () => {
+    // TODO: Integrate AWS Amplify Auth.signUp here
     Alert.alert('Success', 'Account created! Please log in.');
     navigation.navigate('Login');
   };
@@ -72,10 +74,12 @@ const SignUpScreen = ({ navigation }) => {
 const HomeScreen = ({ navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>Cricket Logger</Text>
+    <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('CategorySelect')}>
     <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('CalendarScreen')}>
       <Text style={styles.btnText}>Log New Practice</Text>
     </TouchableOpacity>
     
+    {/* THIS IS THE BUTTON YOU ARE LOOKING FOR */}
     <TouchableOpacity style={styles.btnHistory} onPress={() => navigation.navigate('History')}>
       <Text style={styles.btnText}>View History</Text>
     </TouchableOpacity>
@@ -134,12 +138,80 @@ const CalendarScreen = ({ navigation }) => {
   );
 };
 
+// --- 1.6 BATTING SUB SELECT ---
+const BattingSubSelect = ({ route, navigation }) => {
+  const { date } = route.params;
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Select Batting Drill</Text>
+      {['Nets', 'Shadow Practice', 'Hanging Ball'].map((opt) => (
+        <TouchableOpacity key={opt} style={styles.btn} onPress={() => navigation.navigate('BattingLogForm', { category: 'Batting', subCategory: opt, date })}>
+          <Text style={styles.btnText}>{opt}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+// --- 1.7 BATTING LOG FORM ---
+const BattingLogForm = ({ route, navigation }) => {
+  const { category, subCategory, date } = route.params;
+  const [whereVal, setWhereVal] = useState('');
+  const [whenVal, setWhenVal] = useState('');
+
+  const handleSave = async () => {
+    try {
+      await client.graphql({
+        query: createPracticeLog,
+        variables: {
+          input: {
+            date: date,
+            category: category,
+            subCategory: `${subCategory} - Where: ${whereVal}, When: ${whenVal}`,
+            duration: 0
+          }
+        }
+      });
+      Alert.alert("Success", "Saved to Cloud!");
+      navigation.popToTop();
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Could not save. Check terminal.");
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{subCategory}</Text>
+      <Text style={styles.label}>Where?</Text>
+      <TextInput placeholder="Enter location" style={styles.input} onChangeText={setWhereVal} />
+      <Text style={styles.label}>When?</Text>
+      <TextInput placeholder="Enter time" style={styles.input} onChangeText={setWhenVal} />
+      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+        <Text style={styles.btnText}>Save to Cloud</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 // --- 2. CATEGORY SELECTION ---
+const CategorySelect = ({ navigation }) => (
 const CategorySelect = ({ route, navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>What did you work on?</Text>
     {['Batting', 'Bowling', 'Fielding', 'Fitness'].map((cat) => (
-      <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate('LogForm', { category: cat, date: route.params.date })}>
+      <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate('LogForm', { category: cat })}>
+      <TouchableOpacity 
+        key={cat} 
+        style={styles.btn} 
+        onPress={() => {
+          if (cat === 'Batting') {
+            navigation.navigate('BattingSubSelect', { date: route.params.date });
+          } else {
+            navigation.navigate('LogForm', { category: cat, date: route.params.date });
+          }
+        }}
+      >
         <Text style={styles.btnText}>{cat}</Text>
       </TouchableOpacity>
     ))}
@@ -148,6 +220,7 @@ const CategorySelect = ({ route, navigation }) => (
 
 // --- 3. LOG FORM ---
 const LogForm = ({ route, navigation }) => {
+  const { category } = route.params;
   const { category, date } = route.params;
   const [mins, setMins] = useState('');
   const [sub, setSub] = useState('');
@@ -158,6 +231,7 @@ const LogForm = ({ route, navigation }) => {
         query: createPracticeLog,
         variables: {
           input: {
+            date: new Date().toLocaleDateString(),
             date: date,
             category: category,
             subCategory: sub,
@@ -196,6 +270,7 @@ const HistoryScreen = () => {
   const fetchLogs = async () => {
     try {
       const result = await client.graphql({ query: listPracticeLogs });
+      // Sort logs so newest is at the top
       const sortedLogs = result.data.listPracticeLogs.items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setLogs(sortedLogs);
     } catch (err) {
@@ -211,26 +286,41 @@ const HistoryScreen = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.logCard}>
+            <Text style={styles.cardDate}>{item.date}</Text>
+            <Text style={styles.cardTitle}>{item.category}</Text>
+            <Text style={styles.cardSub}>{item.subCategory}</Text>
+            <Text style={styles.cardMins}>{item.duration} mins</Text>
             <Text style={styles.logDate}>{item.date}</Text>
             <Text>{item.category} - {item.subCategory}</Text>
             <Text>{item.duration} mins</Text>
           </View>
         )}
+        ListEmptyComponent={<Text style={{textAlign: 'center'}}>No logs found yet!</Text>}
       />
     </View>
   );
 };
 
+// --- MAIN NAVIGATOR ---
 // --- NAVIGATION WRAPPER ---
 export default function App() {
   return (
     <NavigationContainer>
+      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerStyle: { backgroundColor: '#3498db' }, headerTintColor: '#fff' }}>
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Sign Up' }} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'My Cricket App' }} />
+        <Stack.Screen name="CategorySelect" component={CategorySelect} options={{ title: 'Select Activity' }} />
+        <Stack.Screen name="LogForm" component={LogForm} options={{ title: 'Enter Details' }} />
+        <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'Past Sessions' }} />
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
         <Stack.Screen name="CategorySelect" component={CategorySelect} />
+        <Stack.Screen name="BattingSubSelect" component={BattingSubSelect} options={{ title: 'Select Drill' }} />
+        <Stack.Screen name="BattingLogForm" component={BattingLogForm} options={{ title: 'Log Batting' }} />
         <Stack.Screen name="LogForm" component={LogForm} />
         <Stack.Screen name="History" component={HistoryScreen} />
       </Stack.Navigator>
@@ -239,6 +329,19 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20, backgroundColor: '#f0f3f5' },
+  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginVertical: 20, color: '#2c3e50' },
+  btn: { backgroundColor: '#3498db', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
+  btnSecondary: { backgroundColor: '#7f8c8d', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
+  btnHistory: { backgroundColor: '#2ecc71', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
+  btnText: { color: 'white', textAlign: 'center', fontWeight: 'bold', fontSize: 16 },
+  input: { backgroundColor: 'white', padding: 15, borderRadius: 8, marginVertical: 10, borderWidth: 1, borderColor: '#dcdde1' },
+  saveBtn: { backgroundColor: '#27ae60', padding: 20, borderRadius: 12, marginTop: 20 },
+  logCard: { backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 12, borderLeftWidth: 6, borderLeftColor: '#3498db', elevation: 3 },
+  cardDate: { fontSize: 12, color: '#7f8c8d', marginBottom: 4 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#2c3e50' },
+  cardSub: { fontSize: 14, color: '#34495e' },
+  cardMins: { fontSize: 14, fontWeight: 'bold', color: '#27ae60', marginTop: 5 }
   container: { flex: 1, padding: 20, backgroundColor: '#fff', justifyContent: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5, marginBottom: 15 },
@@ -254,7 +357,8 @@ const styles = StyleSheet.create({
   dayLabel: { width: '14.2%', textAlign: 'center', fontWeight: 'bold', marginBottom: 5 },
   navText: { fontSize: 24, color: '#007AFF', padding: 10 },
   logCard: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  logDate: { fontWeight: 'bold', color: '#555' }
+  logDate: { fontWeight: 'bold', color: '#555' },
+  label: { fontWeight: 'bold', marginBottom: 5, color: '#333' }
 });
 
 registerRootComponent(App);
