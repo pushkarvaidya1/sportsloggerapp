@@ -17,6 +17,59 @@ Amplify.configure(awsconfig);
 const client = generateClient();
 const Stack = createStackNavigator();
 
+// --- 0. AUTH SCREENS ---
+const LoginScreen = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    // TODO: Integrate AWS Amplify Auth.signIn here
+    if (username && password) {
+      navigation.replace('Home');
+    } else {
+      Alert.alert('Error', 'Please enter username and password');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Sports Logger Login</Text>
+      <TextInput placeholder="Username" style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
+      <TextInput placeholder="Password" style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
+      <TouchableOpacity style={styles.btn} onPress={handleLogin}>
+        <Text style={styles.btnText}>Log In</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.btnSecondary} onPress={() => navigation.navigate('SignUp')}>
+        <Text style={styles.btnText}>New User? Sign Up</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const SignUpScreen = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+
+  const handleSignUp = () => {
+    // TODO: Integrate AWS Amplify Auth.signUp here
+    Alert.alert('Success', 'Account created! Please log in.');
+    navigation.navigate('Login');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Create Account</Text>
+      <TextInput placeholder="Username" style={styles.input} value={username} onChangeText={setUsername} autoCapitalize="none" />
+      <TextInput placeholder="Email" style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+      <TextInput placeholder="Password" style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
+      <TouchableOpacity style={styles.btn} onPress={handleSignUp}>
+        <Text style={styles.btnText}>Sign Up</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 // --- 1. HOME SCREEN ---
 const HomeScreen = ({ navigation }) => (
   <View style={styles.container}>
@@ -126,7 +179,9 @@ const HistoryScreen = () => {
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#3498db' }, headerTintColor: '#fff' }}>
+      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerStyle: { backgroundColor: '#3498db' }, headerTintColor: '#fff' }}>
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Sign Up' }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'My Cricket App' }} />
         <Stack.Screen name="CategorySelect" component={CategorySelect} options={{ title: 'Select Activity' }} />
         <Stack.Screen name="LogForm" component={LogForm} options={{ title: 'Enter Details' }} />
@@ -140,6 +195,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#f0f3f5' },
   title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginVertical: 20, color: '#2c3e50' },
   btn: { backgroundColor: '#3498db', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
+  btnSecondary: { backgroundColor: '#7f8c8d', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
   btnHistory: { backgroundColor: '#2ecc71', padding: 18, borderRadius: 12, marginVertical: 8, elevation: 2 },
   btnText: { color: 'white', textAlign: 'center', fontWeight: 'bold', fontSize: 16 },
   input: { backgroundColor: 'white', padding: 15, borderRadius: 8, marginVertical: 10, borderWidth: 1, borderColor: '#dcdde1' },
