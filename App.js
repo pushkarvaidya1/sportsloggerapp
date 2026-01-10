@@ -75,6 +75,7 @@ const HomeScreen = ({ navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>Cricket Logger</Text>
     <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('CategorySelect')}>
+    <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('CalendarScreen')}>
       <Text style={styles.btnText}>Log New Practice</Text>
     </TouchableOpacity>
     
@@ -85,12 +86,66 @@ const HomeScreen = ({ navigation }) => (
   </View>
 );
 
+// --- 1.5 CALENDAR SCREEN ---
+const CalendarScreen = ({ navigation }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  
+  const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+  const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
+
+  const days = getDaysInMonth(year, month);
+  const firstDay = getFirstDayOfMonth(year, month);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  const changeMonth = (offset) => {
+    const newDate = new Date(currentDate.setMonth(currentDate.getMonth() + offset));
+    setCurrentDate(new Date(newDate));
+  };
+
+  const handleDateSelect = (day) => {
+    const selectedDate = new Date(year, month, day).toLocaleDateString();
+    navigation.navigate('CategorySelect', { date: selectedDate });
+  };
+
+  const renderDays = () => {
+    const daysArray = [];
+    for (let i = 0; i < firstDay; i++) daysArray.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
+    for (let i = 1; i <= days; i++) {
+      daysArray.push(
+        <TouchableOpacity key={i} style={styles.calendarDay} onPress={() => handleDateSelect(i)}>
+          <Text style={styles.calendarDayText}>{i}</Text>
+        </TouchableOpacity>
+      );
+    }
+    return daysArray;
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.calendarHeader}>
+        <TouchableOpacity onPress={() => changeMonth(-1)}><Text style={styles.navText}>{"<"}</Text></TouchableOpacity>
+        <Text style={styles.title}>{monthNames[month]} {year}</Text>
+        <TouchableOpacity onPress={() => changeMonth(1)}><Text style={styles.navText}>{">"}</Text></TouchableOpacity>
+      </View>
+      <View style={styles.calendarGrid}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <Text key={d} style={styles.dayLabel}>{d}</Text>)}
+        {renderDays()}
+      </View>
+    </View>
+  );
+};
+
 // --- 2. CATEGORY SELECTION ---
 const CategorySelect = ({ navigation }) => (
+const CategorySelect = ({ route, navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>What did you work on?</Text>
     {['Batting', 'Bowling', 'Fielding', 'Fitness'].map((cat) => (
       <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate('LogForm', { category: cat })}>
+      <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate('LogForm', { category: cat, date: route.params.date })}>
         <Text style={styles.btnText}>{cat}</Text>
       </TouchableOpacity>
     ))}
@@ -100,6 +155,7 @@ const CategorySelect = ({ navigation }) => (
 // --- 3. LOG FORM ---
 const LogForm = ({ route, navigation }) => {
   const { category } = route.params;
+  const { category, date } = route.params;
   const [mins, setMins] = useState('');
   const [sub, setSub] = useState('');
 
@@ -110,6 +166,7 @@ const LogForm = ({ route, navigation }) => {
         variables: {
           input: {
             date: new Date().toLocaleDateString(),
+            date: date,
             category: category,
             subCategory: sub,
             duration: parseInt(mins) || 0
@@ -183,6 +240,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Sign Up' }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'My Cricket App' }} />
+        <Stack.Screen name="CalendarScreen" component={CalendarScreen} options={{ title: 'Select Date' }} />
         <Stack.Screen name="CategorySelect" component={CategorySelect} options={{ title: 'Select Activity' }} />
         <Stack.Screen name="LogForm" component={LogForm} options={{ title: 'Enter Details' }} />
         <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'Past Sessions' }} />
@@ -205,6 +263,13 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#2c3e50' },
   cardSub: { fontSize: 14, color: '#34495e' },
   cardMins: { fontSize: 14, fontWeight: 'bold', color: '#27ae60', marginTop: 5 }
+  cardMins: { fontSize: 14, fontWeight: 'bold', color: '#27ae60', marginTop: 5 },
+  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  navText: { fontSize: 24, fontWeight: 'bold', color: '#3498db', paddingHorizontal: 15 },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  dayLabel: { width: '14.28%', textAlign: 'center', fontWeight: 'bold', marginBottom: 10, color: '#2c3e50' },
+  calendarDay: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 2 },
+  calendarDayText: { fontSize: 16, color: '#2c3e50' }
 });
 
 registerRootComponent(App);
