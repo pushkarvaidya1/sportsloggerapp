@@ -2,7 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { registerRootComponent } from 'expo';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 
@@ -104,37 +104,139 @@ const CalendarScreen = ({ navigation }) => {
   );
 };
 
-// --- 2. LOGGING & HISTORY ---
+// --- 2. LOGGING SCREENS ---
+const BattingLogScreen = ({ route, navigation }) => {
+  const { date } = route.params;
+  const [data, setData] = useState({
+    'Shadow practice': { m: '', w: '' },
+    'Batting in nets': { m: '', w: '' },
+    'Batting drills': { m: '', w: '' }
+  });
+
+  const update = (k, f, v) => setData(p => ({ ...p, [k]: { ...p[k], [f]: v } }));
+  const save = async () => {
+    const promises = Object.entries(data).filter(([_, v]) => v.m || v.w).map(([k, v]) => 
+      client.graphql({ query: createPracticeLog, variables: { input: { date, category: 'Batting', subCategory: `${k} @ ${v.w}`, duration: parseInt(v.m)||0 } } })
+    );
+    if(!promises.length) return Alert.alert('Empty', 'Please fill details');
+    await Promise.all(promises); Alert.alert('Saved'); navigation.popToTop();
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Batting - {date}</Text>
+      {Object.keys(data).map(k => (
+        <View key={k} style={styles.logGroup}>
+          <Text style={styles.label}>{k}</Text>
+          <View style={styles.row}>
+            <TextInput placeholder="Mins" keyboardType="numeric" style={[styles.input, styles.half]} value={data[k].m} onChangeText={t=>update(k,'m',t)} />
+            <TextInput placeholder="Where" style={[styles.input, styles.half]} value={data[k].w} onChangeText={t=>update(k,'w',t)} />
+          </View>
+        </View>
+      ))}
+      <TouchableOpacity style={styles.saveBtn} onPress={save}><Text style={styles.btnText}>Save</Text></TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+const BowlingLogScreen = ({ route, navigation }) => {
+  const { date } = route.params;
+  const [data, setData] = useState({
+    'Bowling in nets': { m: '', w: '' },
+    'Bowling drills': { m: '', w: '' }
+  });
+
+  const update = (k, f, v) => setData(p => ({ ...p, [k]: { ...p[k], [f]: v } }));
+  const save = async () => {
+    const promises = Object.entries(data).filter(([_, v]) => v.m || v.w).map(([k, v]) => 
+      client.graphql({ query: createPracticeLog, variables: { input: { date, category: 'Bowling', subCategory: `${k} @ ${v.w}`, duration: parseInt(v.m)||0 } } })
+    );
+    if(!promises.length) return Alert.alert('Empty', 'Please fill details');
+    await Promise.all(promises); Alert.alert('Saved'); navigation.popToTop();
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Bowling - {date}</Text>
+      {Object.keys(data).map(k => (
+        <View key={k} style={styles.logGroup}>
+          <Text style={styles.label}>{k}</Text>
+          <View style={styles.row}>
+            <TextInput placeholder="Mins" keyboardType="numeric" style={[styles.input, styles.half]} value={data[k].m} onChangeText={t=>update(k,'m',t)} />
+            <TextInput placeholder="Where" style={[styles.input, styles.half]} value={data[k].w} onChangeText={t=>update(k,'w',t)} />
+          </View>
+        </View>
+      ))}
+      <TouchableOpacity style={styles.saveBtn} onPress={save}><Text style={styles.btnText}>Save</Text></TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+const FieldingLogScreen = ({ route, navigation }) => {
+  const { date } = route.params;
+  const [data, setData] = useState({
+    'Fielding drills': { m: '', w: '' },
+    'Catching practice': { m: '', w: '' }
+  });
+
+  const update = (k, f, v) => setData(p => ({ ...p, [k]: { ...p[k], [f]: v } }));
+  const save = async () => {
+    const promises = Object.entries(data).filter(([_, v]) => v.m || v.w).map(([k, v]) => 
+      client.graphql({ query: createPracticeLog, variables: { input: { date, category: 'Fielding', subCategory: `${k} @ ${v.w}`, duration: parseInt(v.m)||0 } } })
+    );
+    if(!promises.length) return Alert.alert('Empty', 'Please fill details');
+    await Promise.all(promises); Alert.alert('Saved'); navigation.popToTop();
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Fielding - {date}</Text>
+      {Object.keys(data).map(k => (
+        <View key={k} style={styles.logGroup}>
+          <Text style={styles.label}>{k}</Text>
+          <View style={styles.row}>
+            <TextInput placeholder="Mins" keyboardType="numeric" style={[styles.input, styles.half]} value={data[k].m} onChangeText={t=>update(k,'m',t)} />
+            <TextInput placeholder="Where" style={[styles.input, styles.half]} value={data[k].w} onChangeText={t=>update(k,'w',t)} />
+          </View>
+        </View>
+      ))}
+      <TouchableOpacity style={styles.saveBtn} onPress={save}><Text style={styles.btnText}>Save</Text></TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+const FitnessLogScreen = ({ route, navigation }) => {
+  const { date } = route.params;
+  const [lines, setLines] = useState(['', '', '', '', '']);
+  const update = (i, t) => { const n = [...lines]; n[i] = t; setLines(n); };
+  const save = async () => {
+    const promises = lines.filter(l => l.trim()).map(l => 
+      client.graphql({ query: createPracticeLog, variables: { input: { date, category: 'Fitness', subCategory: l, duration: 0 } } })
+    );
+    if(!promises.length) return Alert.alert('Empty', 'Please fill details');
+    await Promise.all(promises); Alert.alert('Saved'); navigation.popToTop();
+  };
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>List all the fitness exercises done today</Text>
+      {lines.map((l, i) => (
+        <TextInput key={i} placeholder={`Exercise ${i+1}`} style={styles.input} value={l} onChangeText={t=>update(i,t)} />
+      ))}
+      <TouchableOpacity style={styles.saveBtn} onPress={save}><Text style={styles.btnText}>Save</Text></TouchableOpacity>
+    </ScrollView>
+  );
+};
+
 const CategorySelect = ({ route, navigation }) => (
   <View style={styles.container}>
     <Text style={styles.title}>Select Category</Text>
     {['Batting', 'Bowling', 'Fielding', 'Fitness'].map(cat => (
-      <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate('LogForm', { category: cat, date: route.params.date })}>
+      <TouchableOpacity key={cat} style={styles.btn} onPress={() => navigation.navigate(`${cat}Log`, { date: route.params.date })}>
         <Text style={styles.btnText}>{cat}</Text>
       </TouchableOpacity>
     ))}
   </View>
 );
-
-const LogForm = ({ route, navigation }) => {
-  const { category, date } = route.params;
-  const [mins, setMins] = useState('');
-  const [sub, setSub] = useState('');
-  const handleSave = async () => {
-    try {
-      await client.graphql({ query: createPracticeLog, variables: { input: { date, category, subCategory: sub, duration: parseInt(mins) || 0 }}});
-      Alert.alert("Success", "Saved!"); navigation.popToTop();
-    } catch (e) { Alert.alert("Error", "Failed to save"); }
-  };
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Log {category} - {date}</Text>
-      <TextInput placeholder="Details" style={styles.input} onChangeText={setSub} />
-      <TextInput placeholder="Minutes" style={styles.input} keyboardType="numeric" onChangeText={setMins} />
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}><Text style={styles.btnText}>Save</Text></TouchableOpacity>
-    </View>
-  );
-};
 
 const HistoryScreen = () => {
   const [logs, setLogs] = useState([]);
@@ -164,7 +266,10 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CalendarScreen" component={CalendarScreen} />
         <Stack.Screen name="CategorySelect" component={CategorySelect} />
-        <Stack.Screen name="LogForm" component={LogForm} />
+        <Stack.Screen name="BattingLog" component={BattingLogScreen} />
+        <Stack.Screen name="BowlingLog" component={BowlingLogScreen} />
+        <Stack.Screen name="FieldingLog" component={FieldingLogScreen} />
+        <Stack.Screen name="FitnessLog" component={FitnessLogScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -185,7 +290,11 @@ const styles = StyleSheet.create({
   calendarDay: { width: '14%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center' },
   calendarDayText: { fontSize: 14 },
   navText: { fontSize: 24, color: '#007AFF', padding: 10 },
-  logCard: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }
+  logCard: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  logGroup: { marginBottom: 10 },
+  label: { fontWeight: 'bold', marginBottom: 5 },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  half: { width: '48%' }
 });
 
 registerRootComponent(App);
